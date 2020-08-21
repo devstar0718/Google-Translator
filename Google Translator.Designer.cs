@@ -35,6 +35,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.buttonTranslate = new System.Windows.Forms.Button();
             this.progressBar1 = new System.Windows.Forms.ProgressBar();
+            this.listBoxLog = new System.Windows.Forms.ListBox();
             this.SuspendLayout();
             // 
             // label1
@@ -51,12 +52,12 @@
             this.textBoxPath.Location = new System.Drawing.Point(136, 20);
             this.textBoxPath.Name = "textBoxPath";
             this.textBoxPath.ReadOnly = true;
-            this.textBoxPath.Size = new System.Drawing.Size(333, 29);
+            this.textBoxPath.Size = new System.Drawing.Size(560, 29);
             this.textBoxPath.TabIndex = 1;
             // 
             // buttonSelect
             // 
-            this.buttonSelect.Location = new System.Drawing.Point(485, 20);
+            this.buttonSelect.Location = new System.Drawing.Point(702, 19);
             this.buttonSelect.Name = "buttonSelect";
             this.buttonSelect.Size = new System.Drawing.Size(36, 30);
             this.buttonSelect.TabIndex = 2;
@@ -69,7 +70,7 @@
             this.comboBoxLang.FormattingEnabled = true;
             this.comboBoxLang.Location = new System.Drawing.Point(184, 63);
             this.comboBoxLang.Name = "comboBoxLang";
-            this.comboBoxLang.Size = new System.Drawing.Size(194, 32);
+            this.comboBoxLang.Size = new System.Drawing.Size(423, 32);
             this.comboBoxLang.TabIndex = 3;
             // 
             // label2
@@ -83,7 +84,7 @@
             // 
             // buttonTranslate
             // 
-            this.buttonTranslate.Location = new System.Drawing.Point(396, 64);
+            this.buttonTranslate.Location = new System.Drawing.Point(613, 63);
             this.buttonTranslate.Name = "buttonTranslate";
             this.buttonTranslate.Size = new System.Drawing.Size(125, 32);
             this.buttonTranslate.TabIndex = 5;
@@ -95,14 +96,26 @@
             // 
             this.progressBar1.Location = new System.Drawing.Point(12, 121);
             this.progressBar1.Name = "progressBar1";
-            this.progressBar1.Size = new System.Drawing.Size(528, 22);
+            this.progressBar1.Size = new System.Drawing.Size(736, 22);
             this.progressBar1.TabIndex = 6;
+            // 
+            // listBoxLog
+            // 
+            this.listBoxLog.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.listBoxLog.FormattingEnabled = true;
+            this.listBoxLog.HorizontalScrollbar = true;
+            this.listBoxLog.ItemHeight = 16;
+            this.listBoxLog.Location = new System.Drawing.Point(12, 158);
+            this.listBoxLog.Name = "listBoxLog";
+            this.listBoxLog.Size = new System.Drawing.Size(736, 244);
+            this.listBoxLog.TabIndex = 7;
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(11F, 24F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(550, 166);
+            this.ClientSize = new System.Drawing.Size(760, 414);
+            this.Controls.Add(this.listBoxLog);
             this.Controls.Add(this.progressBar1);
             this.Controls.Add(this.buttonTranslate);
             this.Controls.Add(this.label2);
@@ -111,7 +124,7 @@
             this.Controls.Add(this.textBoxPath);
             this.Controls.Add(this.label1);
             this.Font = new System.Drawing.Font("Microsoft Sans Serif", 14.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Margin = new System.Windows.Forms.Padding(6, 6, 6, 6);
+            this.Margin = new System.Windows.Forms.Padding(6);
             this.Name = "Form1";
             this.Text = "Google Translator";
             this.ResumeLayout(false);
@@ -128,6 +141,7 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.Button buttonTranslate;
         private System.Windows.Forms.ProgressBar progressBar1;
+        private System.Windows.Forms.ListBox listBoxLog;
     }
 }
 

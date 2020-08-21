@@ -18,17 +18,13 @@ namespace GoogleTranslator
         private Dictionary<string, string> LANG_ID;
         private List<string> AllOriginalText;
 
-        public Form1()
+        public Form1(string path)
         {
             InitializeComponent();
             LANG_ID = new Dictionary<string, string>();
             AddLanguages();
             AllOriginalText = new List<string>();
-            int Target = 3;
-            if ((Target & 2) == 2)
-                Console.WriteLine("10");
-            if ((Target & 1) == 1)
-                Console.WriteLine("01");
+            textBoxPath.Text = path;
         }
 
         private void AddLanguages()
@@ -135,7 +131,10 @@ namespace GoogleTranslator
             LoadTranslateDataFromFile(textBoxPath.Text);
             progressBar1.Minimum = 0;
             progressBar1.Maximum = AllOriginalText.Count;
-            GenerateGoogleTranslationFile(comboBoxLang.Text, textBoxPath.Text);
+            string lang = comboBoxLang.Text;
+            string path = textBoxPath.Text;
+            Task.Factory.StartNew(() => GenerateGoogleTranslationFile(lang, path));
+            //GenerateGoogleTranslationFile(comboBoxLang.Text, textBoxPath.Text);
             progressBar1.Value = 0;
         }
 
@@ -143,8 +142,9 @@ namespace GoogleTranslator
         {
             string file = Path.GetDirectoryName(path) + "/" + targetLang + ".txt";
             File.WriteAllText(file, string.Empty); // Clear content before writing
-            foreach (var orgText in AllOriginalText)
-            {
+            for (int i = 0; i < AllOriginalText.Count; i++)
+            { 
+                string orgText = AllOriginalText[i];
                 using (StreamWriter sw = File.AppendText(file))
                 {
                     sw.WriteLine("msgid:\t" + orgText.Trim());
@@ -155,15 +155,51 @@ namespace GoogleTranslator
                     }
                     if(transText == "")
                     {
-                        MessageBox.Show("Too many request. Please try it later");
-                        break;
+                        int counter = 100;
+                        AddLog(string.Format("Too many request. Please wait for {0} secs...", counter));
+                        for(int j = 0; j < counter; j ++)
+                        {
+                            if(j == 0)
+                                AddLog(string.Format("\t\t{0} secs remaining...", counter - j));
+                            else
+                                UpdateLog(string.Format("\t\t{0} secs remaining...", counter - j));
+                            Thread.Sleep(1000);
+                        }
+                        i--;
+                        continue;
                     }
                     sw.WriteLine("msgstr:\t" + transText.Trim());
                     sw.WriteLine("");
-                    progressBar1.Value++;
+                    Invoke(new MethodInvoker(() =>
+                    {
+                        progressBar1.Value++;
+                    }));
+
+                    string index = string.Format("({0} / {1})", i + 1, AllOriginalText.Count);
+                    AddLog(string.Format("{0}\t  ->    {1}", index, orgText));
+                    AddLog(string.Format("\t  <-    {0}", transText));
+                    AddLog("");
                 }
             }
             MessageBox.Show("Google Translation Finished");
+        }
+
+        private void AddLog(string text)
+        {
+            Invoke(new MethodInvoker(() =>
+            {
+                listBoxLog.Items.Add(text);
+                //listBoxLog.Refresh();
+                listBoxLog.SelectedIndex = listBoxLog.Items.Count - 1;
+            }));
+        }
+        private void UpdateLog(string text)
+        {
+            Invoke(new MethodInvoker(() =>
+            {
+                listBoxLog.Items[listBoxLog.Items.Count - 1] = text;
+                //listBoxLog.Refresh();
+            }));
         }
 
         private void LoadTranslateDataFromFile(string file)
@@ -171,7 +207,7 @@ namespace GoogleTranslator
             try
             {
                 string[] lines = File.ReadAllLines(file);
-                string msgid, msgstr;
+                string msgid;
                 AllOriginalText.Clear();
                 for (int i = 0; i < lines.Length; i++)
                 {
@@ -185,6 +221,7 @@ namespace GoogleTranslator
                         AllOriginalText.Add(msgid);
                         continue;
                     }
+                    //if (i > 50) break;
                 }
             }
             catch (FileNotFoundException e)
