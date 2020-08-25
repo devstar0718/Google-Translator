@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Google.Api.Gax.ResourceNames;
+using Google.Cloud.Translate.V3;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
@@ -13,18 +15,20 @@ using System.Windows.Forms;
 
 namespace GoogleTranslator
 {
-    public partial class Form1 : Form
+    public partial class GoogleTranslator : Form
     {
         private Dictionary<string, string> LANG_ID;
         private List<string> AllOriginalText;
+        private Dictionary<string, string> Dict_Target;
 
-        public Form1(string path)
+        public GoogleTranslator(string path)
         {
             InitializeComponent();
             LANG_ID = new Dictionary<string, string>();
             AddLanguages();
             AllOriginalText = new List<string>();
-            textBoxPath.Text = path;
+            textBoxSrc.Text = path;
+            Dict_Target = new Dictionary<string, string>();
         }
 
         private void AddLanguages()
@@ -104,7 +108,8 @@ namespace GoogleTranslator
             string filePath = "";
             using (OpenFileDialog openFileDialog = new OpenFileDialog())
             {
-                openFileDialog.InitialDirectory = "C:\\Surferbuddy";
+                //openFileDialog.InitialDirectory = "C:\\Surferbuddy";
+                openFileDialog.InitialDirectory = Path.GetDirectoryName(Application.ExecutablePath) + "\\Language";
                 openFileDialog.Filter = "txt files (*.txt)|*.txt|All files (*.*)|*.*";
                 //openFileDialog.Filter = "Image files (*.jpg, *.jpeg, *.jpe, *.jfif, *.png) | *.jpg; *.jpeg; *.jpe; *.jfif; *.png";
                 openFileDialog.FilterIndex = 2;
@@ -121,18 +126,24 @@ namespace GoogleTranslator
 
         private void buttonSelect_Click(object sender, EventArgs e)
         {
-            textBoxPath.Text = GetFilePathWithOpenDialog();
+            textBoxSrc.Text = GetFilePathWithOpenDialog();
         }
 
         private void buttonTranslate_Click(object sender, EventArgs e)
         {
-            if (textBoxPath.Text == "" || comboBoxLang.Text == "")
+            if (textBoxSrc.Text == "" || comboBoxLang.Text == "" || textBoxDst.Text == "")
+            {
+                MessageBox.Show("Please select all the inputs.");
                 return;
-            LoadTranslateDataFromFile(textBoxPath.Text);
+            }
+                
+            LoadTranslatedDataFromFile(textBoxDst.Text);
+            LoadOriginalTextDataFromFile(textBoxSrc.Text);
+            
             progressBar1.Minimum = 0;
             progressBar1.Maximum = AllOriginalText.Count;
             string lang = comboBoxLang.Text;
-            string path = textBoxPath.Text;
+            string path = textBoxDst.Text;
             Task.Factory.StartNew(() => GenerateGoogleTranslationFile(lang, path));
             //GenerateGoogleTranslationFile(comboBoxLang.Text, textBoxPath.Text);
             progressBar1.Value = 0;
@@ -140,10 +151,17 @@ namespace GoogleTranslator
 
         private void GenerateGoogleTranslationFile(string targetLang, string path)
         {
-            string file = Path.GetDirectoryName(path) + "/" + targetLang + ".txt";
-            File.WriteAllText(file, string.Empty); // Clear content before writing
+            if (AllOriginalText.Count == 0)
+            {
+                MessageBox.Show("No text to updates.");
+                return;
+            }
+            //string file = Path.GetDirectoryName(path) + "/" + targetLang + ".txt";
+            string file = path;
+            //File.WriteAllText(file, string.Empty); // Clear content before writing
+            
             for (int i = 0; i < AllOriginalText.Count; i++)
-            { 
+            {
                 string orgText = AllOriginalText[i];
                 using (StreamWriter sw = File.AppendText(file))
                 {
@@ -151,29 +169,34 @@ namespace GoogleTranslator
                     string transText = "";
                     if (targetLang != "English")
                     {
-                        transText = GoogleTranslate(orgText, "English", targetLang);
-                    }
-                    if(transText == "")
-                    {
-                        int counter = 100;
-                        AddLog(string.Format("Too many request. Please wait for {0} secs...", counter));
-                        for(int j = 0; j < counter; j ++)
+                        if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\translatorKey.json"))
                         {
-                            if(j == 0)
-                                AddLog(string.Format("\t\t{0} secs remaining...", counter - j));
-                            else
-                                UpdateLog(string.Format("\t\t{0} secs remaining...", counter - j));
-                            Thread.Sleep(1000);
+                            transText = GoogleCloudTranslate(orgText, "English", targetLang);
                         }
-                        i--;
-                        continue;
+                        else
+                        {
+                            transText = GoogleTranslate(orgText, "English", targetLang);
+                        }
+
                     }
+                    if (transText == "") continue;
+                    //{
+                    //    int counter = 100;
+                    //    AddLog(string.Format("Too many request. Please wait for {0} secs...", counter));
+                    //    for(int j = 0; j < counter; j ++)
+                    //    {
+                    //        if(j == 0)
+                    //            AddLog(string.Format("\t\t{0} secs remaining...", counter - j));
+                    //        else
+                    //            UpdateLog(string.Format("\t\t{0} secs remaining...", counter - j));
+                    //        Thread.Sleep(1000);
+                    //    }
+                    //    i--;
+                    //    continue;
+                    //}
                     sw.WriteLine("msgstr:\t" + transText.Trim());
                     sw.WriteLine("");
-                    Invoke(new MethodInvoker(() =>
-                    {
-                        progressBar1.Value++;
-                    }));
+                    Invoke(new MethodInvoker(() => { progressBar1.Value++; }));//
 
                     string index = string.Format("({0} / {1})", i + 1, AllOriginalText.Count);
                     AddLog(string.Format("{0}\t  ->    {1}", index, orgText));
@@ -202,7 +225,7 @@ namespace GoogleTranslator
             }));
         }
 
-        private void LoadTranslateDataFromFile(string file)
+        private void LoadOriginalTextDataFromFile(string file)
         {
             try
             {
@@ -218,7 +241,36 @@ namespace GoogleTranslator
                     {
                         msgid = lines[i].Substring(6).Trim();
                         //msgstr = lines[i + 1].Substring(7).Trim();
-                        AllOriginalText.Add(msgid);
+                        if(!Dict_Target.ContainsKey(msgid)) // Add if not exists in Tranlated Text.
+                            AllOriginalText.Add(msgid);
+                        continue;
+                    }
+                    //if (i > 50) break;
+                }
+            }
+            catch (FileNotFoundException e)
+            {
+                MessageBox.Show(string.Format("Cannot read Translation file - {0}", e.FileName));
+            }
+        }
+
+        private void LoadTranslatedDataFromFile(string file)
+        {
+            try
+            {
+                string[] lines = File.ReadAllLines(file);
+                string msgid, msgstr;
+                Dict_Target.Clear();
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    if (lines[i] == "") continue;
+                    if (lines[i].Substring(0, Math.Min(lines[i].Length, 6)) == "msgid:"
+                        && i < lines.Length - 1
+                        && lines[i + 1].Substring(0, Math.Min(lines[i + 1].Length, 7)) == "msgstr:")
+                    {
+                        msgid = lines[i].Substring(6).Trim();
+                        msgstr = lines[i + 1].Substring(7).Trim();
+                        Dict_Target[msgid] = msgstr;
                         continue;
                     }
                     //if (i > 50) break;
@@ -240,10 +292,12 @@ namespace GoogleTranslator
             try
             {
                 // Download translation
-                string url = string.Format("https://translate.googleapis.com/translate_a/single?client=gtx&sl={0}&tl={1}&dt=t&q={2}",
-                                            LANG_ID[sourceLanguage],
-                                            LANG_ID[targetLanguage],
-                                            sourceText);
+                string url = string.Format(
+                //"https://translate.googleapis.com/translate_a/single?client=gtx&sl={0}&tl={1}&dt=t&q={2}",
+                "http://translate.google.com/translate_a/t?client=j&text={0}&hl=en&sl={1}&tl={2}&key={3}",
+                 sourceText, LANG_ID[sourceLanguage], LANG_ID[targetLanguage],
+                 "AIzaSyA_PFREI79cpD2UPJ6b0xCUFcxGJ1QxNyM");
+
                 string outputFile = Path.GetTempFileName();
                 using (WebClient wc = new WebClient())
                 {
@@ -312,6 +366,54 @@ namespace GoogleTranslator
 
             // Return result
             return translation;
+        }
+
+        public string GoogleCloudTranslate(string sourceText,
+                                           string sourceLanguage,
+                                           string targetLanguage)
+        {
+            // Initialize
+            try
+            {
+                //System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", @"C:\Users\karl6\OneDrive\Documents\translatorKey.json");
+                System.Environment.SetEnvironmentVariable("GOOGLE_APPLICATION_CREDENTIALS", Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\translatorKey.json");
+                TranslationServiceClient client = TranslationServiceClient.Create();
+
+                // Download translation
+                TranslateTextRequest request = new TranslateTextRequest
+                {
+                    Contents = { sourceText },
+                    TargetLanguageCode = LANG_ID[targetLanguage],
+                    Parent = new ProjectName("natural-apricot-287217").ToString()
+                };
+                TranslateTextResponse response = client.TranslateText(request);
+                Translation translation = response.Translations[0];
+                return translation.TranslatedText;
+
+
+                // Fix up translation
+                //translation = translation.Trim();
+                //translation = translation.Replace(" ?", "?");
+                //translation = translation.Replace(" !", "!");
+                //translation = translation.Replace(" ,", ",");
+                //translation = translation.Replace(" .", ".");
+                //translation = translation.Replace(" ;", ";");
+
+                // And translation speech URL
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+            }
+
+            // Return result
+            return "";
+        }
+
+        private void buttonSelectDst_Click(object sender, EventArgs e)
+        {
+            textBoxDst.Text = GetFilePathWithOpenDialog();
         }
     }
 }
