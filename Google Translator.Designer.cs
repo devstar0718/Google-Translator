@@ -57,6 +57,7 @@
             this.textBoxSrc.ReadOnly = true;
             this.textBoxSrc.Size = new System.Drawing.Size(577, 29);
             this.textBoxSrc.TabIndex = 1;
+            this.textBoxSrc.TextChanged += new System.EventHandler(this.textBoxSrc_TextChanged);
             // 
             // buttonSelectSrc
             // 
@@ -75,6 +76,7 @@
             this.comboBoxLang.Name = "comboBoxLang";
             this.comboBoxLang.Size = new System.Drawing.Size(417, 32);
             this.comboBoxLang.TabIndex = 3;
+            this.comboBoxLang.SelectedIndexChanged += new System.EventHandler(this.comboBoxLang_SelectedIndexChanged);
             // 
             // label2
             // 

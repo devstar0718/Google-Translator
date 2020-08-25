@@ -278,7 +278,8 @@ namespace GoogleTranslator
             }
             catch (FileNotFoundException e)
             {
-                MessageBox.Show(string.Format("Cannot read Translation file - {0}", e.FileName));
+                //MessageBox.Show(string.Format("Cannot read Translation file - {0}", e.FileName));
+                File.WriteAllText(file, string.Empty);
             }
         }
 
@@ -414,6 +415,20 @@ namespace GoogleTranslator
         private void buttonSelectDst_Click(object sender, EventArgs e)
         {
             textBoxDst.Text = GetFilePathWithOpenDialog();
+        }
+
+        private void comboBoxLang_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (textBoxSrc.Text == "")
+                return;
+            textBoxDst.Text = Path.GetDirectoryName(textBoxSrc.Text) + "\\" + comboBoxLang.Text + ".txt";
+        }
+
+        private void textBoxSrc_TextChanged(object sender, EventArgs e)
+        {
+            if (comboBoxLang.Text == "")
+                return;
+            textBoxDst.Text = Path.GetDirectoryName(textBoxSrc.Text) + "\\" + comboBoxLang.Text + ".txt";
         }
     }
 }
