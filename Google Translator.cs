@@ -169,10 +169,12 @@ namespace GoogleTranslator
                     string transText = "";
                     if (targetLang != "English")
                     {
+                        // IF the google authentication file exists in the Documents folder, call the cloud translating which has no limit 
                         if (File.Exists(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments) + @"\translatorKey.json"))
                         {
                             transText = GoogleCloudTranslate(orgText, "English", targetLang);
                         }
+                        // IF not, call the normal translation which has limit - 50 000 chars in a day ( maybe )
                         else
                         {
                             transText = GoogleTranslate(orgText, "English", targetLang);
@@ -306,7 +308,7 @@ namespace GoogleTranslator
                     wc.DownloadFile(url, outputFile);
                 }
 
-                // Get translated text
+                // Get translated text - parsing the response from google
                 if (File.Exists(outputFile))
                 {
 
